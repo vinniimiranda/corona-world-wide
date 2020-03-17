@@ -7,6 +7,8 @@ import am4geodata_continentsLow from '@amcharts/amcharts4-geodata/continentsLow'
 import am4themes_animated from '@amcharts/amcharts4/themes/animated';
 import api from './../../services/api';
 
+import loadingIMG from '../../assets/loading.png'
+import Loading from '../../components/Loading';
 // am4core.useTheme(am4geodata_worldLow);
 am4core.useTheme(am4themes_animated);
 
@@ -129,8 +131,8 @@ export default function Main() {
     'ZW',
   ];
   const payload = {};
-  const [loading, setLoading] = useState(true)
-  const [data, setData] = useState({})
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({});
   useEffect(() => {
     async function loadData({ pais }) {
       api({
@@ -141,12 +143,10 @@ export default function Main() {
         try {
           payload[pais] = res.data.countrydata[0].total_cases;
           if (Object.keys(payload).length === 112) {
-            setData(payload)
-            setLoading(false)
-          };
-        } catch (error) {
-          
-        }
+            setData(payload);
+            setLoading(false);
+          }
+        } catch (error) {}
       });
     }
     for (const pais of paises) {
@@ -169,40 +169,48 @@ export default function Main() {
         );
       }
 
-      // var label = chart.createChild(am4core.Label);
-      // label.text =
-      //   "12 months (3/7/2019 data) rolling measles\nincidence per 1'000'000 total population. \n Bullet size uses logarithmic scale.";
-      // label.fontSize = 12;
-      // label.align = 'left';
-      // label.valign = 'bottom';
-      // label.fill = am4core.color('#927459');
-      // label.background = new am4core.RoundedRectangle();
-      // label.background.cornerRadius(10, 10, 10, 10);
-      // label.padding(10, 10, 10, 10);
-      // label.marginLeft = 30;
-      // label.marginBottom = 30;
-      // label.background.strokeOpacity = 0.3;
-      // label.background.stroke = am4core.color('#927459');
-      // label.background.fill = am4core.color('#f9e3ce');
-      // label.background.fillOpacity = 0.6;
+      var label = chart.createChild(am4core.Label);
+      label.text =
+        "12 months (3/7/2019 data) rolling measles\nincidence per 1'000'000 total population. \n Bullet size uses logarithmic scale.";
+      label.fontSize = 12;
+      label.align = 'left';
+      label.valign = 'bottom';
+      label.fill = am4core.color('#01DBCC');
+      label.background = new am4core.RoundedRectangle();
+      label.background.cornerRadius(10, 10, 10, 10);
+      label.padding(10, 10, 10, 10);
+      label.marginLeft = 30;
+      label.marginBottom = 30;
+      label.background.strokeOpacity = 0.3;
+      label.background.stroke = am4core.color('#01DBCC');
+      label.background.strokeWidth = 2;
+      label.background.fill = am4core.color('#000014');
+      label.background.fillOpacity = 0.6;
 
-      // var dataSource = chart.createChild(am4core.TextLink);
-      // dataSource.text = 'Data source: WHO';
-      // dataSource.fontSize = 12;
-      // dataSource.align = 'left';
-      // dataSource.valign = 'top';
-      // dataSource.url =
-      //   'https://www.who.int/immunization/monitoring_surveillance/burden/vpd/surveillance_type/active/measles_monthlydata/en/';
-      // dataSource.urlTarget = '_blank';
-      // dataSource.fill = am4core.color('#927459');
-      // dataSource.padding(10, 10, 10, 10);
-      // dataSource.marginLeft = 30;
-      // dataSource.marginTop = 30;
+      var dataSource = chart.createChild(am4core.TextLink);
+      dataSource.text = 'Data source: Coronavirus Tracker API';
+      dataSource.fontSize = 12;
+      dataSource.align = 'left';
+      dataSource.valign = 'top';
+      dataSource.url =
+        'https://thevirustracker.com/api';
+      dataSource.urlTarget = '_blank';
+      dataSource.fill = am4core.color('#01DBCC');
+      dataSource.padding(10, 10, 10, 10);
+      dataSource.marginLeft = 30;
+      dataSource.marginTop = 30;
 
+      // Set projection
       // Set projection
       chart.projection = new am4maps.projections.Orthographic();
       chart.panBehavior = 'rotateLongLat';
+      chart.deltaLatitude = -20;
       chart.padding(20, 20, 20, 20);
+
+      // limits vertical rotation
+      chart.adapter.add('deltaLatitude', function(delatLatitude) {
+        return am4core.math.fitToRange(delatLatitude, -90, 90);
+      });
 
       // Add zoom control
       chart.zoomControl = new am4maps.ZoomControl();
@@ -264,7 +272,7 @@ export default function Main() {
       polygonSeries.useGeodata = true;
 
       polygonSeries.calculateVisualCenter = true;
-      polygonSeries.tooltip.background.fillOpacity = .8;
+      polygonSeries.tooltip.background.fillOpacity = 0.8;
       polygonSeries.tooltip.label.fill = am4core.color('#fff');
       polygonSeries.tooltip.background.cornerRadius = 20;
 
@@ -276,7 +284,7 @@ export default function Main() {
       polygonSeries.calculateVisualCenter = true;
       template.propertyFields.id = 'id';
       template.tooltipPosition = 'fixed';
-      template.fillOpacity = 0.50;
+      template.fillOpacity = 0.5;
 
       template.events.on('over', function(event) {
         if (event.target.dummyData) {
@@ -300,7 +308,7 @@ export default function Main() {
       graticuleSeries.mapLines.template.stroke = am4core.color('#fff');
 
       var measelsSeries = chart.series.push(new am4maps.MapPolygonSeries());
-      measelsSeries.tooltip.background.fillOpacity = .8;
+      measelsSeries.tooltip.background.fillOpacity = 0.8;
       measelsSeries.tooltip.background.fill = am4core.color('#fff');
       measelsSeries.tooltip.background.cornerRadius = 20;
       measelsSeries.tooltip.autoTextColor = false;
@@ -328,7 +336,7 @@ export default function Main() {
               mapPolygon.visualLatitude,
               Math.max(0.2, (Math.log(count) * Math.LN10) / 10)
             );
-            polygon.tooltipText = `${mapPolygon.dataItem.dataContext.name}: ${count} cases`
+            polygon.tooltipText = `${mapPolygon.dataItem.dataContext.name}: ${count} cases`;
             mapPolygon.dummyData = polygon;
             polygon.events.on('over', function() {
               mapPolygon.isHover = true;
@@ -344,9 +352,9 @@ export default function Main() {
         });
       });
     }
-
-    
   }, [loading]);
 
-  return <div id="chartdiv" style={{ width: '100%', height: '80vh' }}></div>;
+  return <div id="chartdiv" style={{ width: '100%', height: '100vh' }}>
+    {loading && <Loading /> }
+  </div>;
 }
