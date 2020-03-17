@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import * as am4core from '@amcharts/amcharts4/core';
-import * as am4charts from '@amcharts/amcharts4/charts';
 import * as am4maps from '@amcharts/amcharts4/maps';
-import am4geodata_worldLow from '@amcharts/amcharts4-geodata/worldHigh';
+import am4geodata_worldLow from '@amcharts/amcharts4-geodata/worldLow';
 import am4geodata_continentsLow from '@amcharts/amcharts4-geodata/continentsLow';
 import am4themes_animated from '@amcharts/amcharts4/themes/animated';
 import api from './../../services/api';
 
-import loadingIMG from '../../assets/loading.png'
 import Loading from '../../components/Loading';
-// am4core.useTheme(am4geodata_worldLow);
-am4core.useTheme(am4themes_animated);
 
+// am4core.useTheme(am4themes_animated);
+
+const colors = {
+  primary: '#01DBCC',
+  background: '#000014',
+  text: '#fff',
+};
 export default function Main() {
-  var paises = [
+  const paises = [
     'AL',
     'AM',
     'AO',
@@ -133,6 +136,7 @@ export default function Main() {
   const payload = {};
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({});
+  const [stats, setStats] = useState(null)
   useEffect(() => {
     async function loadData({ pais }) {
       api({
@@ -141,7 +145,12 @@ export default function Main() {
         },
       }).then(res => {
         try {
-          payload[pais] = res.data.countrydata[0].total_cases;
+          payload[pais] = {
+            cases: res.data.countrydata[0].total_cases,
+            deaths: res.data.countrydata[0].total_deaths,
+            today: res.data.countrydata[0].total_new_cases_today,
+          };
+
           if (Object.keys(payload).length === 112) {
             setData(payload);
             setLoading(false);
@@ -152,12 +161,19 @@ export default function Main() {
     for (const pais of paises) {
       loadData({ pais });
     }
+    async function loadStats() {
+      api({
+        params: {
+          global: "stats"
+        }
+      }).then((res => setStats(res.data.results[0])))
+    }
+    loadStats()
   }, []);
 
   useEffect(() => {
     if (!loading) {
-      var chart = am4core.create('chartdiv', am4maps.MapChart);
-      var interfaceColors = new am4core.InterfaceColorSet();
+      const chart = am4core.create('chartdiv', am4maps.MapChart);
 
       try {
         chart.geodata = am4geodata_worldLow;
@@ -169,42 +185,46 @@ export default function Main() {
         );
       }
 
-      var label = chart.createChild(am4core.Label);
-      label.text =
-        "12 months (3/7/2019 data) rolling measles\nincidence per 1'000'000 total population. \n Bullet size uses logarithmic scale.";
-      label.fontSize = 12;
+      const label = chart.createChild(am4core.Label);
+      label.text = `World Wide Coronavirus Stats
+      Total cases: ${stats.total_cases}
+      Total deaths: ${stats.total_deaths}
+      Total new cases today: ${stats.total_new_cases_today}
+      Total new deaths today: ${stats.total_new_deaths_today}
+`;  
+      label.fontSize = '1rem';
+      label.fontWeight = 'bold';
       label.align = 'left';
       label.valign = 'bottom';
-      label.fill = am4core.color('#01DBCC');
+      label.fill = am4core.color(colors.primary);
       label.background = new am4core.RoundedRectangle();
       label.background.cornerRadius(10, 10, 10, 10);
       label.padding(10, 10, 10, 10);
       label.marginLeft = 30;
       label.marginBottom = 30;
       label.background.strokeOpacity = 0.3;
-      label.background.stroke = am4core.color('#01DBCC');
+      label.background.stroke = am4core.color(colors.primary);
       label.background.strokeWidth = 2;
       label.background.fill = am4core.color('#000014');
       label.background.fillOpacity = 0.6;
 
-      var dataSource = chart.createChild(am4core.TextLink);
+      const dataSource = chart.createChild(am4core.TextLink);
       dataSource.text = 'Data source: Coronavirus Tracker API';
-      dataSource.fontSize = 12;
+      dataSource.fontSize = '1rem';
+      dataSource.fontWeight = 'bold';
       dataSource.align = 'left';
       dataSource.valign = 'top';
-      dataSource.url =
-        'https://thevirustracker.com/api';
+      dataSource.url = 'https://thevirustracker.com/api';
       dataSource.urlTarget = '_blank';
-      dataSource.fill = am4core.color('#01DBCC');
+      dataSource.fill = am4core.color(colors.primary);
       dataSource.padding(10, 10, 10, 10);
       dataSource.marginLeft = 30;
       dataSource.marginTop = 30;
 
       // Set projection
-      // Set projection
       chart.projection = new am4maps.projections.Orthographic();
       chart.panBehavior = 'rotateLongLat';
-      chart.deltaLatitude = -20;
+      chart.deltaLatitude = -200;
       chart.padding(20, 20, 20, 20);
 
       // limits vertical rotation
@@ -215,7 +235,7 @@ export default function Main() {
       // Add zoom control
       chart.zoomControl = new am4maps.ZoomControl();
 
-      var homeButton = new am4core.Button();
+      const homeButton = new am4core.Button();
       homeButton.events.on('hit', function() {
         chart.goHome();
       });
@@ -233,8 +253,8 @@ export default function Main() {
         '#000014'
       );
       chart.backgroundSeries.mapPolygons.template.polygon.fillOpacity = 1;
-      chart.deltaLongitude = 20;
-      chart.deltaLatitude = -20;
+      chart.deltaLongitude = 60;
+      chart.deltaLatitude = 0;
 
       // limits vertical rotation
       chart.adapter.add('deltaLatitude', function(delatLatitude) {
@@ -243,7 +263,7 @@ export default function Main() {
 
       // Create map polygon series
 
-      var shadowPolygonSeries = chart.series.push(
+      const shadowPolygonSeries = chart.series.push(
         new am4maps.MapPolygonSeries()
       );
       shadowPolygonSeries.geodata = am4geodata_continentsLow;
@@ -268,7 +288,7 @@ export default function Main() {
       shadowPolygonSeries.fill = am4core.color('#fff');
 
       // Create map polygon series
-      var polygonSeries = chart.series.push(new am4maps.MapPolygonSeries());
+      const polygonSeries = chart.series.push(new am4maps.MapPolygonSeries());
       polygonSeries.useGeodata = true;
 
       polygonSeries.calculateVisualCenter = true;
@@ -276,10 +296,10 @@ export default function Main() {
       polygonSeries.tooltip.label.fill = am4core.color('#fff');
       polygonSeries.tooltip.background.cornerRadius = 20;
 
-      var template = polygonSeries.mapPolygons.template;
+      const template = polygonSeries.mapPolygons.template;
       template.nonScalingStroke = true;
-      template.fill = am4core.color('#01DBCC');
-      template.stroke = am4core.color('#01DBCC');
+      template.fill = am4core.color(colors.primary);
+      template.stroke = am4core.color(colors.primary);
 
       polygonSeries.calculateVisualCenter = true;
       template.propertyFields.id = 'id';
@@ -297,17 +317,17 @@ export default function Main() {
         }
       });
 
-      var hs = polygonSeries.mapPolygons.template.states.create('hover');
+      const hs = polygonSeries.mapPolygons.template.states.create('hover');
       hs.properties.fillOpacity = 1;
-      hs.properties.fill = am4core.color('#01DBCC');
+      hs.properties.fill = am4core.color(colors.primary);
 
-      var graticuleSeries = chart.series.push(new am4maps.GraticuleSeries());
+      const graticuleSeries = chart.series.push(new am4maps.GraticuleSeries());
       graticuleSeries.mapLines.template.stroke = am4core.color('#fff');
       graticuleSeries.fitExtent = false;
       graticuleSeries.mapLines.template.strokeOpacity = 0.2;
       graticuleSeries.mapLines.template.stroke = am4core.color('#fff');
 
-      var measelsSeries = chart.series.push(new am4maps.MapPolygonSeries());
+      const measelsSeries = chart.series.push(new am4maps.MapPolygonSeries());
       measelsSeries.tooltip.background.fillOpacity = 0.8;
       measelsSeries.tooltip.background.fill = am4core.color('#fff');
       measelsSeries.tooltip.background.cornerRadius = 20;
@@ -315,28 +335,34 @@ export default function Main() {
       measelsSeries.tooltip.label.fill = am4core.color('#fff');
       measelsSeries.tooltip.dy = -5;
 
-      var measelTemplate = measelsSeries.mapPolygons.template;
+      const measelTemplate = measelsSeries.mapPolygons.template;
       measelTemplate.fill = am4core.color('#aa0000');
       measelTemplate.strokeOpacity = 0;
       measelTemplate.fillOpacity = 0.75;
       measelTemplate.tooltipPosition = 'fixed';
 
-      var hs2 = measelsSeries.mapPolygons.template.states.create('hover');
+      const hs2 = measelsSeries.mapPolygons.template.states.create('hover');
       hs2.properties.fillOpacity = 1;
       hs2.properties.fill = am4core.color('#ff0000');
 
       polygonSeries.events.on('inited', function() {
         polygonSeries.mapPolygons.each(function(mapPolygon) {
-          var count = data[mapPolygon.id];
+          const count = data[mapPolygon.id] ? data[mapPolygon.id].cases : 0;
+          const deaths = data[mapPolygon.id] ? data[mapPolygon.id].deaths : 0;
+          const today = data[mapPolygon.id] ? data[mapPolygon.id].today : 0;
 
           if (count > 0) {
-            var polygon = measelsSeries.mapPolygons.create();
+            const polygon = measelsSeries.mapPolygons.create();
             polygon.multiPolygon = am4maps.getCircle(
               mapPolygon.visualLongitude,
               mapPolygon.visualLatitude,
               Math.max(0.2, (Math.log(count) * Math.LN10) / 10)
             );
-            polygon.tooltipText = `${mapPolygon.dataItem.dataContext.name}: ${count} cases`;
+            polygon.tooltipText = `${mapPolygon.dataItem.dataContext.name}
+            Confirmed cases: ${count}
+            Today cases: ${today}
+            Deaths: ${deaths}
+            `;
             mapPolygon.dummyData = polygon;
             polygon.events.on('over', function() {
               mapPolygon.isHover = true;
@@ -354,7 +380,9 @@ export default function Main() {
     }
   }, [loading]);
 
-  return <div id="chartdiv" style={{ width: '100%', height: '100vh' }}>
-    {loading && <Loading /> }
-  </div>;
+  return (
+    <div id="chartdiv" style={{ width: '100%', height: '100vh' }}>
+      {loading && <Loading />}
+    </div>
+  );
 }
