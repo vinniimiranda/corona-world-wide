@@ -231,6 +231,17 @@ export default function Main() {
       chart.adapter.add('deltaLatitude', function(delatLatitude) {
         return am4core.math.fitToRange(delatLatitude, -90, 90);
       });
+      
+      let animation;
+      setTimeout(function(){
+        animation = chart.animate({property:"deltaLongitude", to:100000}, 20000000);
+      }, 3000)
+      chart.seriesContainer.events.on("down", function(){
+        if(animation){
+          animation.stop();
+        }
+        })
+      
 
       // Add zoom control
       chart.zoomControl = new am4maps.ZoomControl();
@@ -340,6 +351,7 @@ export default function Main() {
       measelTemplate.strokeOpacity = 0;
       measelTemplate.fillOpacity = 0.75;
       measelTemplate.tooltipPosition = 'fixed';
+      // measelTemplate.animate({property: "fillOpacity", from: 0, to:1 }, 1000)
 
       const hs2 = measelsSeries.mapPolygons.template.states.create('hover');
       hs2.properties.fillOpacity = 1;
