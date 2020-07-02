@@ -3,7 +3,7 @@ import * as am4core from '@amcharts/amcharts4/core';
 import * as am4maps from '@amcharts/amcharts4/maps';
 import am4geodata_worldLow from '@amcharts/amcharts4-geodata/worldLow';
 import am4geodata_continentsLow from '@amcharts/amcharts4-geodata/continentsLow';
-import am4themes_animated from '@amcharts/amcharts4/themes/animated';
+
 import api from './../../services/api';
 
 import Loading from '../../components/Loading';
@@ -15,160 +15,25 @@ const colors = {
   background: '#000014',
   text: '#fff',
 };
-export default function Main() {
-  const paises = [
-    'AL',
-    'AM',
-    'AO',
-    'AR',
-    'AT',
-    'AU',
-    'AZ',
-    'BA',
-    'BD',
-    'BE',
-    'BF',
-    'BG',
-    'BI',
-    'BJ',
-    'BR',
-    'BT',
-    'BY',
-    'CA',
-    'CD',
-    'CF',
-    'CG',
-    'CH',
-    'CI',
-    'CL',
-    'CM',
-    'CN',
-    'CO',
-    'CY',
-    'CZ',
-    'DK',
-    'EE',
-    'EG',
-    'ES',
-    'FI',
-    'FR',
-    'GA',
-    'GB',
-    'GE',
-    'GH',
-    'GM',
-    'GN',
-    'GQ',
-    'GR',
-    'HR',
-    'HU',
-    'ID',
-    'IE',
-    'IL',
-    'IN',
-    'IQ',
-    'IR',
-    'IT',
-    'JP',
-    'KE',
-    'KG',
-    'KH',
-    'KM',
-    'KZ',
-    'LA',
-    'LK',
-    'LR',
-    'LS',
-    'LT',
-    'LU',
-    'LV',
-    'MA',
-    'MD',
-    'ME',
-    'MG',
-    'MK',
-    'ML',
-    'MM',
-    'MN',
-    'MR',
-    'MT',
-    'MV',
-    'MX',
-    'MY',
-    'MZ',
-    'NA',
-    'NE',
-    'NG',
-    'NL',
-    'NO',
-    'NP',
-    'NZ',
-    'PE',
-    'PK',
-    'PL',
-    'PT',
-    'RO',
-    'RS',
-    'RU',
-    'RW',
-    'SE',
-    'SG',
-    'SI',
-    'SK',
-    'SN',
-    'SO',
-    'SS',
-    'TD',
-    'TG',
-    'TH',
-    'TL',
-    'TN',
-    'TR',
-    'UA',
-    'UG',
-    'US',
-    'UZ',
-    'VE',
-    'ZA',
-    'ZM',
-    'ZW',
-  ];
-  const payload = {};
+export default function Main () {
+
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({});
   const [stats, setStats] = useState(null)
   useEffect(() => {
-    async function loadData({ pais }) {
-      api({
-        params: {
-          countryTotal: pais,
-        },
-      }).then(res => {
-        try {
-          payload[pais] = {
-            cases: res.data.countrydata[0].total_cases,
-            deaths: res.data.countrydata[0].total_deaths,
-            today: res.data.countrydata[0].total_new_cases_today,
-          };
-
-          if (Object.keys(payload).length === 112) {
-            setData(payload);
-            setLoading(false);
-          }
-        } catch (error) {}
+    async function loadData () {
+      api.get('/countries').then(({ data: resData }) => {
+        setData(resData)
+        setLoading(false)
       });
     }
-    for (const pais of paises) {
-      loadData({ pais });
+
+    async function loadStats () {
+      api.get('stats').then(({ data: resData }) => setStats(resData));
     }
-    async function loadStats() {
-      api({
-        params: {
-          global: "stats"
-        }
-      }).then((res => setStats(res.data.results[0])))
-    }
-    loadStats()
+
+    loadStats();
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -191,7 +56,7 @@ export default function Main() {
       Total deaths: ${stats.total_deaths}
       Total new cases today: ${stats.total_new_cases_today}
       Total new deaths today: ${stats.total_new_deaths_today}
-`;  
+`;
       label.fontSize = '1rem';
       label.fontWeight = 'bold';
       label.align = 'left';
@@ -228,26 +93,26 @@ export default function Main() {
       chart.padding(20, 20, 20, 20);
 
       // limits vertical rotation
-      chart.adapter.add('deltaLatitude', function(delatLatitude) {
+      chart.adapter.add('deltaLatitude', function (delatLatitude) {
         return am4core.math.fitToRange(delatLatitude, -90, 90);
       });
-      
+
       let animation;
-      setTimeout(function(){
-        animation = chart.animate({property:"deltaLongitude", to:100000}, 20000000);
+      setTimeout(function () {
+        animation = chart.animate({ property: "deltaLongitude", to: 100000 }, 20000000);
       }, 3000)
-      chart.seriesContainer.events.on("down", function(){
-        if(animation){
+      chart.seriesContainer.events.on("down", function () {
+        if (animation) {
           animation.stop();
         }
-        })
-      
+      })
+
 
       // Add zoom control
       chart.zoomControl = new am4maps.ZoomControl();
 
       const homeButton = new am4core.Button();
-      homeButton.events.on('hit', function() {
+      homeButton.events.on('hit', function () {
         chart.goHome();
       });
 
@@ -268,7 +133,7 @@ export default function Main() {
       chart.deltaLatitude = 0;
 
       // limits vertical rotation
-      chart.adapter.add('deltaLatitude', function(delatLatitude) {
+      chart.adapter.add('deltaLatitude', function (delatLatitude) {
         return am4core.math.fitToRange(delatLatitude, -90, 90);
       });
 
@@ -317,12 +182,12 @@ export default function Main() {
       template.tooltipPosition = 'fixed';
       template.fillOpacity = 0.5;
 
-      template.events.on('over', function(event) {
+      template.events.on('over', function (event) {
         if (event.target.dummyData) {
           event.target.dummyData.isHover = true;
         }
       });
-      template.events.on('out', function(event) {
+      template.events.on('out', function (event) {
         if (event.target.dummyData) {
           event.target.dummyData.isHover = false;
         }
@@ -357,8 +222,8 @@ export default function Main() {
       hs2.properties.fillOpacity = 1;
       hs2.properties.fill = am4core.color('#ff0000');
 
-      polygonSeries.events.on('inited', function() {
-        polygonSeries.mapPolygons.each(function(mapPolygon) {
+      polygonSeries.events.on('inited', function () {
+        polygonSeries.mapPolygons.each(function (mapPolygon) {
           const count = data[mapPolygon.id] ? data[mapPolygon.id].cases : 0;
           const deaths = data[mapPolygon.id] ? data[mapPolygon.id].deaths : 0;
           const today = data[mapPolygon.id] ? data[mapPolygon.id].today : 0;
@@ -376,10 +241,10 @@ export default function Main() {
             Deaths: ${deaths}
             `;
             mapPolygon.dummyData = polygon;
-            polygon.events.on('over', function() {
+            polygon.events.on('over', function () {
               mapPolygon.isHover = true;
             });
-            polygon.events.on('out', function() {
+            polygon.events.on('out', function () {
               mapPolygon.isHover = false;
             });
           } else {
@@ -390,7 +255,9 @@ export default function Main() {
         });
       });
     }
-  }, [loading]);
+
+    //eslint-disable-next-line
+  }, [loading, data]);
 
   return (
     <div id="chartdiv" style={{ width: '100%', height: '100vh' }}>

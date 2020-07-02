@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://thevirustracker.com/free-api',
+  baseURL: 'https://corona-world-wide-api.herokuapp.com/',
 });
 
 export default api;
